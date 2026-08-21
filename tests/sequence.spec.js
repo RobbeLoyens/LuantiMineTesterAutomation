@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { chromium } from 'playwright';
+require('dotenv').config();
 
 test.describe.serial('headed sequence', () => {
   test.setTimeout(0);
@@ -33,6 +34,19 @@ test.describe.serial('headed sequence', () => {
     }
   });
 
+  test('login with secure password', async ({ page }) => {
+    const password = process.env.TEST_PASSWORD;
+    const username = process.env.TEST_USERNAME;
+    const goToSignInButton = page.locator('#navbarColor01 > ul.navbar-nav.ms-auto > li:nth-child(1) > a');
+    const signInButton = page.locator("body > main > form > input.btn.btn-lg.btn-primary.d-block.w-100");
+    await page.click(goToSignInButton);
+    await page.fill('#password', password);
+    await page.fill('#username', username);
+    await page.click(signInButton );
+
+    await expect(page.locator('.dashboard')).toBeVisible();
+  });
+
   test('click Minitest game button', async () => {
     const selectors = [
       'a.packagetile:has-text("Minetest Game")',
@@ -61,6 +75,7 @@ test.describe.serial('headed sequence', () => {
       throw new Error(`Minitest game button not found — page content written to ${dumpPath}`);
     }
   });
+ 
 
   test('click gallery next three times', async () => {
     const sel = '#galleryCarousel > div > button.carousel-control-next';
@@ -82,8 +97,17 @@ test.describe.serial('headed sequence', () => {
     }
   });
 
+  test('verify Dependencies section', async () => {
+    const informationTab = page.locator('#tab-info');
+    await expect(informationTab).toBeVisible();
+    await informationTab.click();
 
-  
+    const informationPanel = page.locator('#information');
+    await expect(informationPanel).toBeVisible();
+    await expect(informationPanel).toContainText('Dependencies');
+    await expect(informationPanel).toContainText('No required dependencies');
+  });
+ 
   test('close browser automatically', async () => {
     await browser.close();
   });
