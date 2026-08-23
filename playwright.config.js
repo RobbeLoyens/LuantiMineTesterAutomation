@@ -35,7 +35,7 @@ export default defineConfig({
     trace: 'on',
     /* Capture a screenshot and video for every test. */
     screenshot: 'on',
-    video: 'on',
+    video: 'off',
     launchOptions: {
       // 1
       args: ["--start-maximized"],
