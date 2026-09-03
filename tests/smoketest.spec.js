@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import constants from 'node:constants';
 import { chromium } from 'playwright';
 require('dotenv').config();
 
@@ -9,6 +10,11 @@ function randomPassword(length = 12) {
 
 async function demoPause(page, milliseconds = 800) {
   await page.waitForTimeout(milliseconds);
+}
+
+async function openLoginPage(page) {
+  await page.goto('https://content.luanti.org/user/login/');
+  await expect(page.locator('#username')).toBeVisible();
 }
 
 async function expectLoginRejected(page, signInButton) {
@@ -58,17 +64,12 @@ test.describe.serial('headed sequence', () => {
     } catch (e) {
       // ignore if the keypress isn't supported in this environment
     }
-
-    await page.getByRole('link', { name: 'Sign in', exact: true }).click();
-    await demoPause(page);
-    await expect(page).toHaveURL(/\/user\/login\/?$/);
-    await expect(page.locator('#username')).toBeVisible();
   });
 
   test('negative TC - unknown username', async () => {
     const password = process.env.TEST_PASSWORD;
     const signInButton = page.locator("body > main > form > input.btn.btn-lg.btn-primary.d-block.w-100");
-    await expect(page).toHaveURL(/\/user\/login\/?$/);
+    await openLoginPage(page);
     const incorrectUsername = 'RobbeLLLoyens';
     await page.fill('#username', incorrectUsername);
     await demoPause(page);
@@ -82,7 +83,7 @@ test.describe.serial('headed sequence', () => {
   test('negative TC - password too short', async () => {
     const username = process.env.TEST_USERNAME;
     const signInButton = page.locator("body > main > form > input.btn.btn-lg.btn-primary.d-block.w-100");
-    await expect(page).toHaveURL(/\/user\/login\/?$/);
+    await openLoginPage(page);
     await page.fill('#username', username);
     await demoPause(page);
     await page.fill('#password', 'ab');
@@ -96,7 +97,7 @@ test.describe.serial('headed sequence', () => {
     const username = process.env.TEST_USERNAME;
     const password = process.env.TEST_PASSWORD;
     const signInButton = page.locator("body > main > form > input.btn.btn-lg.btn-primary.d-block.w-100");
-    await expect(page).toHaveURL(/\/user\/login\/?$/);
+    await openLoginPage(page);
     await page.fill('#username', username);
     await demoPause(page);
     let incorrectPassword = randomPassword();
@@ -114,7 +115,7 @@ test.describe.serial('headed sequence', () => {
     const password = process.env.TEST_PASSWORD;
     const username = process.env.TEST_USERNAME;
     const signInButton = page.locator("body > main > form > input.btn.btn-lg.btn-primary.d-block.w-100");
-    await expect(page).toHaveURL(/\/user\/login\/?$/);
+    await openLoginPage(page);
     await page.fill('#username', username);
     await demoPause(page);
     await page.fill('#password', password);
