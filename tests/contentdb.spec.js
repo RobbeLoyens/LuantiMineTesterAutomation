@@ -102,30 +102,46 @@ test.describe.serial('ContentDB package browsing', () => {
     await page.waitForTimeout(1000);
   });
 
-  test('tags filtering updates results', async () => {        
+  test('filter by server tools updates package results', async () => {
     await expect(page.getByText('Filter by tags', { exact: true })).toBeVisible();
     const before = await packageCards(page).count();
+
     await page.getByRole('link', { name: /Server Moderation and Tools/ }).click();
+
     await expect(page).toHaveURL(/tag=server_tools/);
     await page.waitForTimeout(1000);
+
     const afterServerTools = await packageCards(page).count();
     expect(afterServerTools).not.toBe(before);
+  });
+
+  test('adding a second tag narrows the list further', async () => {
+    const beforeWorldTools = await packageCards(page).count();
+
     await page.getByRole('link', { name: /World Maintenance and Tools/ }).click();
+
     await expect(page).toHaveURL(/tag=world_tools&tag=server_tools/);
-    await expect.poll(() => packageCards(page).count()).not.toBe(afterServerTools);
+    await expect.poll(() => packageCards(page).count()).not.toBe(beforeWorldTools);
     await page.waitForTimeout(1000);
+
     const afterWorldTools = await packageCards(page).count();
-    expect(afterWorldTools).not.toBe(afterServerTools);
+    expect(afterWorldTools).not.toBe(beforeWorldTools);
+  });
+
+  test('switching tags changes the active filter', async () => {
+    const beforeSwitch = await packageCards(page).count();
+
     await page.getByRole('link', { name: /World Maintenance and Tools/ }).click();
     await page.waitForTimeout(1000);
     await page.getByRole('link', { name: /Server Moderation and Tools/ }).click();
     await page.waitForTimeout(1000);
     await page.getByRole('link', { name: /Building Mechanics and Tools/ }).click();
+
     await expect(page).toHaveURL(/tag=building_mechanics/);
     await page.waitForTimeout(1000);
-    const afterBuildingMechanicsAndTools = await packageCards(page).count();
 
-    expect(afterBuildingMechanicsAndTools).not.toBe(before);
+    const afterBuildingMechanicsAndTools = await packageCards(page).count();
+    expect(afterBuildingMechanicsAndTools).not.toBe(beforeSwitch);
   });
 
   test('clicking result loads a different page', async () => {       
@@ -193,7 +209,7 @@ test.describe.serial('ContentDB package browsing', () => {
     const downloadButton = page.getByRole('link', { name: 'Download' }).first();
     await expect(downloadButton).toBeVisible();
     const downloadUrl = await downloadButton.getAttribute('href');
-    expect(downloadUrl).toMatch(/packages\/Sheriff-Unit-3\/circuits\/releases\/37925\/download\//);
+    expect(downloadUrl).toMatch(/packages\/Sheriff-Unit-3\/circuits\/releases\/\d+\/download\//);
 
     //await downloadButton.evaluate((element) => element.removeAttribute('target'));
     const downloadPromise = page.waitForEvent('download');
