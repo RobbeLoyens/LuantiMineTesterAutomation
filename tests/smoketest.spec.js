@@ -1,5 +1,4 @@
 import { test, expect } from '@playwright/test';
-import constants from 'node:constants';
 import { chromium } from 'playwright';
 require('dotenv').config();
 
@@ -8,13 +7,13 @@ function randomPassword(length = 12) {
   return Array.from({ length }, () => characters[Math.floor(Math.random() * characters.length)]).join('');
 }
 
-async function scrollToLoginError(page) {
-  const loginError = page.locator(
-    'main .alert:visible, main [role="alert"]:visible, main .invalid-feedback:visible'
-  ).first();
-  if (await loginError.count() > 0) {
-    await loginError.scrollIntoViewIfNeeded();
-  }
+async function demoPause(page, milliseconds = 800) {
+  await page.waitForTimeout(milliseconds);
+}
+
+async function expectLoginRejected(page, signInButton) {
+  await expect(page).toHaveURL(/\/user\/login\/?$/);
+  await expect(signInButton).toBeVisible();
 }
 
 test.describe.serial('headed sequence', () => {
@@ -59,57 +58,74 @@ test.describe.serial('headed sequence', () => {
     } catch (e) {
       // ignore if the keypress isn't supported in this environment
     }
+
+    await page.getByRole('link', { name: 'Sign in', exact: true }).click();
+    await demoPause(page);
+    await expect(page).toHaveURL(/\/user\/login\/?$/);
+    await expect(page.locator('#username')).toBeVisible();
   });
 
-  test('login with secure password', async () => {
+  test('negative TC - unknown username', async () => {
     const password = process.env.TEST_PASSWORD;
-    const username = process.env.TEST_USERNAME;
-    const goToSignInButton = page.locator('#navbarColor01 > ul.navbar-nav.ms-auto > li:nth-child(1) > a');
     const signInButton = page.locator("body > main > form > input.btn.btn-lg.btn-primary.d-block.w-100");
-    await goToSignInButton.click();
-    await page.waitForTimeout(1000);
-    const incorrectUsername = 'RobbeLLLoyens';    
+    await expect(page).toHaveURL(/\/user\/login\/?$/);
+    const incorrectUsername = 'RobbeLLLoyens';
     await page.fill('#username', incorrectUsername);
-    await page.waitForTimeout(1000);
+    await demoPause(page);
     await page.fill('#password', password);
-    await page.waitForTimeout(1000);
+    await demoPause(page);
     await signInButton.click();
-    await page.waitForTimeout(1000);
-    
+    await demoPause(page);
+    await expectLoginRejected(page, signInButton);
+  });
 
-    await expect(signInButton).toBeVisible();
-
+  test('negative TC - password too short', async () => {
+    const username = process.env.TEST_USERNAME;
+    const signInButton = page.locator("body > main > form > input.btn.btn-lg.btn-primary.d-block.w-100");
+    await expect(page).toHaveURL(/\/user\/login\/?$/);
     await page.fill('#username', username);
-    await page.waitForTimeout(1000);
+    await demoPause(page);
     await page.fill('#password', 'ab');
-    await page.waitForTimeout(1000);
+    await demoPause(page);
     await signInButton.click();
-    await page.waitForTimeout(1000);
-    await scrollToLoginError(page);
+    await demoPause(page);
+    await expectLoginRejected(page, signInButton);
+  });
 
-    await expect(signInButton).toBeVisible();
-
+  test('negative TC - incorrect password', async () => {
+    const username = process.env.TEST_USERNAME;
+    const password = process.env.TEST_PASSWORD;
+    const signInButton = page.locator("body > main > form > input.btn.btn-lg.btn-primary.d-block.w-100");
+    await expect(page).toHaveURL(/\/user\/login\/?$/);
+    await page.fill('#username', username);
+    await demoPause(page);
     let incorrectPassword = randomPassword();
     while (incorrectPassword === password) {
       incorrectPassword = randomPassword();
     }
     await page.fill('#password', incorrectPassword);
-    await page.waitForTimeout(1000);
+    await demoPause(page);
     await signInButton.click();
-    await page.waitForTimeout(1000);
-    
+    await demoPause(page);
+    await expectLoginRejected(page, signInButton);
+  });
 
-    await expect(signInButton).toBeVisible();
-
+  test('login with secure password', async () => {
+    const password = process.env.TEST_PASSWORD;
+    const username = process.env.TEST_USERNAME;
+    const signInButton = page.locator("body > main > form > input.btn.btn-lg.btn-primary.d-block.w-100");
+    await expect(page).toHaveURL(/\/user\/login\/?$/);
+    await page.fill('#username', username);
+    await demoPause(page);
     await page.fill('#password', password);
-    await page.waitForTimeout(1000);
+    await demoPause(page);
     const rememberMe = page.locator('#remember_me');
     if (await rememberMe.isChecked()) {
       await rememberMe.uncheck();
-      await page.waitForTimeout(1000);
+      await demoPause(page);
     }
     await signInButton.click();
-    await page.waitForTimeout(1000);
+    await demoPause(page);
 
     const navigationMenu = page.locator('#navbarColor01');
     const profileMenu = page.locator('xpath=//*[@id="navbarColor01"]/ul[2]/li[4]');
@@ -126,10 +142,10 @@ test.describe.serial('headed sequence', () => {
     const profileMenu = page.locator('xpath=//*[@id="navbarColor01"]/ul[2]/li[4]');
     const profileDropdown = profileMenu.locator('[role="button"]');
     await profileDropdown.click();
-    await page.waitForTimeout(1000);
+    await demoPause(page);
     const logoutButton = profileMenu.locator('a[href*="/logout"]');
     await logoutButton.click();
-    await page.waitForTimeout(1000);
+    await demoPause(page);
     await expect(page.getByRole('link', { name: 'Sign in', exact: true })).toBeVisible();
   })
 });
