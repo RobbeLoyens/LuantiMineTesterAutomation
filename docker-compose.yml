@@ -1,13 +1,66 @@
 services:
-  metadata:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: luanti_demo
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${PGPASSWORD:-yourpassword}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d luanti_demo"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  pgadmin:
+    image: dpage/pgadmin4
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-admin@example.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-admin}
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+
+  workflow:
     build:
       context: .
       dockerfile: Dockerfile
-    # Edit these non-secret connection settings here when needed.
+    depends_on:
+      postgres:
+        condition: service_healthy
     environment:
-      PGHOST: host.docker.internal
+      PGHOST: postgres
       PGPORT: "5432"
-      PGDATABASE: LuantiDemo
+      PGDATABASE: luanti_demo
       PGUSER: postgres
-      # Keep the password in the ignored .env file.
-      PGPASSWORD: ${PGPASSWORD:?Set PGPASSWORD in .env}
+      PGPASSWORD: ${PGPASSWORD:-yourpassword}
+    command: ["python", "main.py"]
+
+  playwright:
+    build:
+      context: .
+      dockerfile: Dockerfile.playwright
+    depends_on:
+      postgres:
+        condition: service_healthy
+      workflow:
+        condition: service_completed_successfully
+    environment:
+      PGHOST: postgres
+      PGPORT: "5432"
+      PGDATABASE: luanti_demo
+      PGUSER: postgres
+      PGPASSWORD: ${PGPASSWORD:-yourpassword}
+    command: ["npx", "playwright", "test", "--config=playwright.config.docker.js"]
+
+volumes:
+  postgres_data:
+  pgadmin_data:

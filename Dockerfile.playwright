@@ -1,0 +1,16 @@
+# Use the official Playwright image with browser dependencies included.
+FROM mcr.microsoft.com/playwright:v1.62.1-noble
+
+# Set the application working directory.
+WORKDIR /app
+
+# Install the exact Node.js dependencies from the lockfile.
+COPY package.json package-lock.json ./
+RUN npm ci
+
+# Copy the database helper, test configuration, and metadata test.
+COPY db.ts playwright.config.docker.js ./
+COPY tests/metadata.spec.ts ./tests/metadata.spec.ts
+
+# Run the Playwright test suite by default.
+CMD ["npx", "playwright", "test", "--config=playwright.config.docker.js"]

@@ -71,6 +71,10 @@ cursor = conn.cursor()
 insert_query = """
     INSERT INTO package_metadata (package_name, latest_version, screenshots, dependencies)
     VALUES (%s, %s, %s, %s)
+    ON CONFLICT (package_name) DO UPDATE SET
+        latest_version = EXCLUDED.latest_version,
+        screenshots = EXCLUDED.screenshots,
+        dependencies = EXCLUDED.dependencies
 """
 
 cursor.execute(insert_query, (package_name, latest_version, screenshots_count, dependencies_count))

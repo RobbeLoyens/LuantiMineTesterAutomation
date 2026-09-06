@@ -28,8 +28,9 @@ Build the image from the project directory:
 docker build -t luanti-metadata .
 ```
 
-Edit the non-secret PostgreSQL settings in `docker-compose.yml`. Keep only the
-password in the ignored `.env` file, then build and run the service:
+The Compose pipeline starts PostgreSQL, pgAdmin, the Python metadata workflow,
+and the Playwright test runner in dependency order. The workflow and tests use
+the Compose service name `postgres` for database access.
 
 ```powershell
 docker compose up --build
@@ -41,5 +42,6 @@ Stop and remove the container with `Ctrl+C`, or run:
 docker compose down
 ```
 
-The container does not expose port 8000 because this is a batch script, not a
-network service.
+PostgreSQL is available on port `5432`, and pgAdmin is available at
+`http://localhost:5050`. The workflow and Playwright services do not expose
+application ports because they are batch jobs.
