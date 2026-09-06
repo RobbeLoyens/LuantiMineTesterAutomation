@@ -120,7 +120,10 @@ test.describe.serial('ContentDB package browsing', () => {
 
     await page.getByRole('link', { name: /World Maintenance and Tools/ }).click();
 
-    await expect(page).toHaveURL(/tag=world_tools&tag=server_tools/);
+    await expect.poll(() => {
+      const url = new URL(page.url());
+      return url.searchParams.getAll('tag').sort();
+    }).toEqual(['server_tools', 'world_tools']);
     await expect.poll(() => packageCards(page).count()).not.toBe(beforeWorldTools);
     await page.waitForTimeout(1000);
 
