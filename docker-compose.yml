@@ -1,0 +1,13 @@
+services:
+  metadata:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    # Edit these non-secret connection settings here when needed.
+    environment:
+      PGHOST: host.docker.internal
+      PGPORT: "5432"
+      PGDATABASE: LuantiDemo
+      PGUSER: postgres
+      # Keep the password in the ignored .env file.
+      PGPASSWORD: ${PGPASSWORD:?Set PGPASSWORD in .env}

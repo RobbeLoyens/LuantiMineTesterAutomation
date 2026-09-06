@@ -2,4 +2,7 @@
 playwright-report/
 test-results/
 .env
+.env.*
+!.env.example
 .vscode/
+__pycache__/
