@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { closeDatabase, getExpectedMetadata } from '../db';
+import { handleBotDetection } from './helpers/bot-detection';
 
 const author = 'Wuzzy';
 const packageName = 'mineclone2';
@@ -17,6 +18,7 @@ test('ContentDB metadata matches PostgreSQL', async ({ page }) => {
   const response = await page.goto(packageUrl, { waitUntil: 'domcontentloaded' });
   expect(response).not.toBeNull();
   expect(response?.status()).toBe(200);
+  await handleBotDetection(page);
 
   // Count the package screenshots displayed in the ContentDB gallery.
   const screenshotItems = page.locator('#galleryCarousel .carousel-item a[href^="/uploads/"]');

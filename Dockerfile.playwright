@@ -11,6 +11,7 @@ RUN npm ci
 # Copy the database helper, test configuration, and metadata test.
 COPY db.ts playwright.config.docker.js ./
 COPY tests/metadata.spec.ts ./tests/metadata.spec.ts
+COPY tests/helpers/bot-detection.ts ./tests/helpers/bot-detection.ts
 
 # Run the Playwright test suite by default.
 CMD ["npx", "playwright", "test", "--config=playwright.config.docker.js"]
